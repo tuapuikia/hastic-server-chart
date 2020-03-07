@@ -1,0 +1,65 @@
+{{- $analyticName := .Values.server.name -}}
+{{- $analyticPort := .Values.server.service.analyticPort -}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "hastic-analytic.fullname" . }}
+  labels:
+    {{- include "hastic-analytic.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.analytic.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "hastic-analytic.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "hastic-analytic.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.analytic.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "hastic-analytic.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.analytic.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Values.analytic.name }}
+          securityContext:
+            {{- toYaml .Values.analytic.securityContext | nindent 12 }}
+          image: "{{ .Values.analytic.image.repository }}:{{ .Values.analytic.image.tag }}"
+          imagePullPolicy: {{ .Values.analytic.image.pullPolicy }}
+          env:
+            - name: HASTIC_SERVER_URL
+              value: "ws://{{ $analyticName }}:{{ $analyticPort }}"
+          {{- if .Values.analytic.env }}
+{{ toYaml .Values.analytic.env | indent 12}}
+          {{- end }}
+#          ports:
+#            - name: analytic
+#              containerPort: 8002
+#              protocol: TCP
+#          livenessProbe:
+#            tcpSocket:
+#              port: 8002
+#            initialDelaySeconds: 5
+#            periodSeconds: 10
+#          readinessProbe:
+#            tcpSocket:
+#              port: 8002
+#            initialDelaySeconds: 5
+#            periodSeconds: 20            
+          resources:
+            {{- toYaml .Values.analytic.resources | nindent 12 }}
+      {{- with .Values.analytic.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.analytic.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.analytic.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

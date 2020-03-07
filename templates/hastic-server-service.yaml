@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "hastic-server.fullname" . }}
+  labels:
+    {{- include "hastic-server.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.server.service.type }}
+  ports:
+    - port: {{ .Values.server.service.port }}
+      targetPort: {{ .Values.server.service.targetPort}}
+      protocol: TCP
+      name: http
+    - port: {{ .Values.server.service.analyticPort }}
+      targetPort: {{ .Values.server.service.targetAnalyticPort }}
+      protocol: TCP
+      name: analytic
+  selector:
+    {{- include "hastic-server.selectorLabels" . | nindent 4 }}
